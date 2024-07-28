@@ -1,0 +1,91 @@
+services:
+    db:
+        container_name: postgres
+        image: postgres:16
+        # ports: 
+        # - 5432:5432
+        environment:
+            - POSTGRES_DB=cryptoservice
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=password
+            - PGUSER=postgres
+        restart: always
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready" ]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    redis:
+        image: redis:7
+        # ports:
+        #     - 6379:6379
+        command:
+            [
+                "redis-server",
+                "--appendonly",
+                "no",
+                "--maxmemory",
+                "30mb",
+                "--maxmemory-policy",
+                "allkeys-lru"
+            ]
+        healthcheck:
+            test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    celery:
+        build: .
+        command: celery -A cryptoalerts worker --loglevel=info
+        volumes:
+            - ./:/usr/src/app/
+        environment:
+            - DEBUG=1
+            - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+        env_file:
+            - docker.env
+        depends_on:
+            - db
+            - redis
+
+    celery-beat:
+        build: .
+        command: celery -A cryptoalerts beat --loglevel=info
+        volumes:
+            - ./:/usr/src/app/
+        environment:
+            - DEBUG=1
+            - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+        env_file:
+            - docker.env
+        depends_on:
+            - db
+            - redis
+
+    web-background:
+        build: .
+        volumes:
+            - ./:/usr/src/app/
+        env_file:
+            - docker.env
+        command: bash -c "python binance_wss_updater.py"
+
+    web:
+        build: .
+        command: >
+            bash -c "python manage.py migrate
+            && python manage.py createsuperuser --noinput --username $DJANGO_SUPERUSER_USERNAME --email $DJANGO_SUPERUSER_EMAIL
+            && gunicorn cryptoalerts.wsgi:application -b :8000 --log-file - --log-level=debug"
+        # command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+        volumes:
+            - ./:/usr/src/app/
+        ports:
+            - "8000:8000"
+        env_file:
+            - docker.env
+        depends_on:
+            - db
+            - redis
+            - celery
