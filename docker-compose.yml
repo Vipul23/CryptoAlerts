@@ -77,7 +77,7 @@ services:
         command: >
             bash -c "python manage.py migrate
             && python manage.py createsuperuser --noinput --username $DJANGO_SUPERUSER_USERNAME --email $DJANGO_SUPERUSER_EMAIL
-            && gunicorn cryptoalerts.wsgi:application -b :8000 --log-file - --log-level=debug"
+            && gunicorn cryptoalerts.wsgi:application -b :8000 --log-file - --log-level=info"
         # command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
         volumes:
             - ./:/usr/src/app/

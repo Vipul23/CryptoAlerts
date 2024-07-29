@@ -35,6 +35,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Debug is enabled if the deployment is not production and env variables are loaded from .env file for easy development
 if IS_PROD:
     DEBUG = False
+    from dotenv import load_dotenv
+    load_dotenv()
 else:
     DEBUG = True
     from dotenv import load_dotenv

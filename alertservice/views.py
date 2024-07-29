@@ -2,6 +2,8 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_headers
 from django.core.cache import caches
+from django.http import HttpRequest
+from django.utils.cache import get_cache_key
 from django.contrib.auth.models import Group, User
 from django.db.models import Q
 
@@ -9,7 +11,7 @@ from rest_framework import generics, filters, permissions, viewsets
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from alertservice.models import Alert
@@ -24,14 +26,13 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
+    permission_classes = [permissions.IsAdminUser]
 
 class AlertViewSet(viewsets.ModelViewSet):
     serializer_class = AlertSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    @method_decorator(cache_page(60 * 10))
+    @method_decorator(cache_page(30))
     @method_decorator(vary_on_headers("Authorization"))
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)

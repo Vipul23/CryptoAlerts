@@ -42,9 +42,7 @@ async def binance_wss_data():
                     for i in data:
                         redis_instance.persist_dict[i['s']] = i['c']
                     redis_instance.save()
-                    # print(f"Number of objects: {number_of_objects}")
-                    # print(redis_instance.persist_dict.keys())
-                    print(str(number_of_objects)+" Updated")
+                    # print(str(number_of_objects)+" Updated")
                     await asyncio.sleep(2)
         except websockets.exceptions.ConnectionClosedOK:
             print("WebSocket connection closed")
