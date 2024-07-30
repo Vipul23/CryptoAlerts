@@ -14,7 +14,7 @@
     ```
 3. Create a file `docker.env` that holds the environment variables changed as per the requirement
     ```env
-    IS_PROD_DEPLOYMENT=TRUE
+    IS_PROD_DEPLOYMENT=TRUE # Set to FALSE for development
 
     DJANGO_SECRET_KEY="7+20m*njaz9)2jhq(h!rue@y=m2nn@mh0x=^vj9gz3hbzb&gzd"  # Should be changed
 
@@ -24,20 +24,15 @@
     POSTGRES_DB_HOST=db
     POSTGRES_DB_PORT=5432
 
-    ENABLE_CELERY=TRUE
     REDIS_URL=redis://redis:6379/0
     REDIS_HOST=redis
 
     EMAIL_HOST=smtp.gmail.com
     EMAIL_PORT=587
-    EMAIL_HOST_USER=email@example.com
-    EMAIL_HOST_PASSWORD=passwordtosmtp
-
-    DJANGO_SUPERUSER_PASSWORD=password
-    DJANGO_SUPERUSER_EMAIL=admin@example.com
-    DJANGO_SUPERUSER_USERNAME=admin
+    EMAIL_HOST_USER=<email address>
+    EMAIL_HOST_PASSWORD=< password >
     ```
-    and create a file .env with the content
+    and create a file .env with the content which is used to create admin account (superuser)
     ```env
     DJANGO_SUPERUSER_PASSWORD=password
     DJANGO_SUPERUSER_EMAIL=admin@example.com
@@ -45,7 +40,6 @@
     ```
 4. Run `docker compose up --build` or `docker compose up --build -d` to not see logs
 5. The apis will be available at `http://localhost:8000`
-6. There is a superuser created with the credentials provided in the `docker.env` & `.env` files
 
 # Endpoints
 
@@ -132,3 +126,22 @@
 
 # Alerts
 To send alerts, the Binance websocket is connected by a python script, this then saves the data to a redis cache. A Celery beat worker then checks the alerts every minute against the data. If the alert is triggered, SMTP is used to send an email to the user.
+
+# Project Structure and Architecture
+The docker compose file launches 6 services, 
+1. Postgres
+    This is the database.
+2. Redis
+    This is redis cache used for storing the coin prices from binance and the page caches for all alerts.
+3. Django
+    - This is the main application that serves the APIs.
+    - It has separate paths for users and alerts at /api/users and /api/alerts
+    - The users can only be modified or viewed by superuser admins
+    - The alerts can be created, deleted and viewed by the user who created them
+    - The alerts are also cached in redis for faster access
+    - The alerts are also paginated
+    - The alerts can also be filtered based on the status and the coin symbol
+4. Celery Worker , Celery Beat Worker
+    These are celery workers that runs every minute to check the alerts against the coin prices.They then send mail if price is acheived
+5. Binance API
+    This is a python script that connects to the binance websocket and saves the coin prices to the redis cache.It also has exponential backoff implemented in case of network failure or binance server failure.
