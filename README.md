@@ -130,11 +130,12 @@ To send alerts, the Binance websocket is connected by a python script, this then
 # Project Structure and Architecture
 The docker compose file launches 6 services, 
 1. Postgres
-    This is the database.
+    - This is the database.
 2. Redis
-    This is redis cache used for storing the coin prices from binance and the page caches for all alerts.
+    - This is redis cache used for storing the coin prices from binance and the page caches for all alerts.
 3. Django
     - This is the main application that serves the APIs.
+    - It uses Django Rest Framework for the APIs and JWT for authentication.
     - It has separate paths for users and alerts at /api/users and /api/alerts
     - The users can only be modified or viewed by superuser admins
     - The alerts can be created, deleted and viewed by the user who created them
@@ -142,6 +143,6 @@ The docker compose file launches 6 services,
     - The alerts are also paginated
     - The alerts can also be filtered based on the status and the coin symbol
 4. Celery Worker , Celery Beat Worker
-    These are celery workers that runs every minute to check the alerts against the coin prices.They then send mail if price is acheived
-5. Binance API
-    This is a python script that connects to the binance websocket and saves the coin prices to the redis cache.It also has exponential backoff implemented in case of network failure or binance server failure.
+    - These are celery workers that runs every minute to check the alerts against the coin prices.They then send mail if price is acheived
+5. Binance API Script
+    - This is a python script that connects to the binance websocket and saves the coin prices to the redis cache.It also has exponential backoff implemented in case of network failure or binance server failure.
